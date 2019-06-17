@@ -15,6 +15,7 @@ import { foldersAndFiles } from './config/foldersAndFiles';
 import { filesToModifyContent } from './config/filesToModifyContent';
 import { bundleIdentifiers } from './config/bundleIdentifiers';
 
+const isWin = process.platform == 'win32';
 const devTestRNProject = ''; // For Development eg '/Users/junedomingo/Desktop/RN49'
 const __dirname = devTestRNProject || process.cwd();
 const projectName = pjson.name;
@@ -47,7 +48,7 @@ function replaceContent(regex, replacement, paths) {
 
 const deletePreviousBundleDirectory = ({ oldBundleNameDir, shouldDelete }) => {
   if (shouldDelete) {
-    const dir = oldBundleNameDir.replace(/\./g, '/');
+    const dir = oldBundleNameDir.replace(/\./g, path.sep);
     const deleteDirectory = shell.rm('-rf', dir);
     Promise.resolve(deleteDirectory);
     console.log('Done removing previous bundle directory.'.green);
@@ -59,16 +60,16 @@ const deletePreviousBundleDirectory = ({ oldBundleNameDir, shouldDelete }) => {
 
 const cleanBuilds = () => {
   const deleteDirectories = shell.rm('-rf', [
-    path.join(__dirname, 'ios/build/*'),
-    path.join(__dirname, 'android/.gradle/*'),
-    path.join(__dirname, 'android/app/build/*'),
-    path.join(__dirname, 'android/build/*'),
+    path.join(__dirname, 'ios', 'build', '*'),
+    path.join(__dirname, 'android', '.gradle', '*'),
+    path.join(__dirname, 'android','app','build','*'),
+    path.join(__dirname, 'android','build','*'),
   ]);
   Promise.resolve(deleteDirectories);
   console.log('Done removing builds.'.green);
 };
 
-readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
+readFile(path.join(__dirname, 'android','app','src','main','res','values','strings.xml'))
   .then(data => {
     const $ = cheerio.load(data);
     const currentAppName = $('string[name=app_name]').text();
@@ -89,7 +90,7 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
         const listOfFilesToModifyContent = filesToModifyContent(currentAppName, newName, projectName);
 
         if (bundleID) {
-          newBundlePath = bundleID.replace(/\./g, '/');
+          newBundlePath = bundleID.replace(/\./g, path.sep);
           const id = bundleID.split('.');
           if (id.length < 2)
             return console.log(
@@ -119,7 +120,7 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
 
               if (fs.existsSync(path.join(__dirname, element)) || !fs.existsSync(path.join(__dirname, element))) {
                 const move = shell.exec(
-                  `git mv "${path.join(__dirname, element)}" "${path.join(__dirname, dest)}" 2>/dev/null`
+                  `git mv "${path.join(__dirname, element)}" "${path.join(__dirname, dest)}" 2>${ !isWin ? '/dev/' : ''}null`
                 );
 
                 if (move.code === 0) {
@@ -168,19 +169,19 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
 
         const resolveJavaFiles = () =>
           new Promise(resolve => {
-            readFile(path.join(__dirname, 'android/app/src/main/AndroidManifest.xml')).then(data => {
+            readFile(path.join(__dirname, 'android','app', 'src', 'main', 'AndroidManifest.xml')).then(data => {
               const $ = cheerio.load(data);
               const currentBundleID = $('manifest').attr('package');
               const newBundleID = program.bundleID ? bundleID : `com.${lC_Ns_NewAppName}`;
-              const javaFileBase = '/android/app/src/main/java';
-              const newJavaPath = `${javaFileBase}/${newBundleID.replace(/\./g, '/')}`;
-              const currentJavaPath = `${javaFileBase}/${currentBundleID.replace(/\./g, '/')}`;
+              const javaFileBase = path.join('android','app','src','main','java');
+              const newJavaPath = path.join(javaFileBase, newBundleID.replace(/\./g, path.sep));
+              const currentJavaPath = path.join(javaFileBase, currentBundleID.replace(/\./g, path.sep));
 
               if (bundleID) {
                 newBundlePath = newJavaPath;
               } else {
-                newBundlePath = newBundleID.replace(/\./g, '/').toLowerCase();
-                newBundlePath = `${javaFileBase}/${newBundlePath}`;
+                newBundlePath = newBundleID.replace(/\./g, path.sep).toLowerCase();
+                newBundlePath = path.join(javaFileBase, newBundlePath);
               }
 
               const fullCurrentBundlePath = path.join(__dirname, currentJavaPath);
@@ -189,14 +190,14 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
               // Create new bundle folder if doesn't exist yet
               if (!fs.existsSync(fullNewBundlePath)) {
                 shell.mkdir('-p', fullNewBundlePath);
-                const move = shell.exec(`git mv "${fullCurrentBundlePath}/"* "${fullNewBundlePath}" 2>/dev/null`);
+                const move = shell.exec(`git mv "${fullCurrentBundlePath + path.sep}"* "${fullNewBundlePath}" 2>${ !isWin ? /dev/ : ''}null`);
                 const successMsg = `${newBundlePath} ${colors.green('BUNDLE INDENTIFIER CHANGED')}`;
 
                 if (move.code === 0) {
                   console.log(successMsg);
                 } else if (move.code === 128) {
                   // if "outside repository" error occured
-                  if (shell.mv('-f', fullCurrentBundlePath + '/*', fullNewBundlePath).code === 0) {
+                  if (shell.mv('-f', fullCurrentBundlePath + path.sep + '*', fullNewBundlePath).code === 0) {
                     console.log(successMsg);
                   } else {
                     console.log(`Error moving: "${currentJavaPath}" "${newBundlePath}"`);

@@ -9,7 +9,9 @@ export function filesToModifyContent(currentAppName, newName) {
     {
       regex: `<string name="app_name">${currentAppName}</string>`,
       replacement: `<string name="app_name">${newName}</string>`,
-      paths: ['android/app/src/main/res/values/strings.xml'],
+      paths: [
+        path.join('android', 'app', 'src', 'main', 'res', 'values', 'strings.xml')
+      ],
     },
     {
       regex: nS_CurrentAppName,
@@ -18,27 +20,31 @@ export function filesToModifyContent(currentAppName, newName) {
         'index.js',
         'index.android.js',
         'index.ios.js',
-        `ios/${nS_NewName}.xcodeproj/project.pbxproj`,
-        `ios/${nS_NewName}.xcworkspace/contents.xcworkspacedata`,
-        `ios/${nS_NewName}.xcodeproj/xcshareddata/xcschemes/${nS_NewName}-tvOS.xcscheme`,
-        `ios/${nS_NewName}.xcodeproj/xcshareddata/xcschemes/${nS_NewName}.xcscheme`,
-        `ios/${nS_NewName}/AppDelegate.m`,
-        'android/settings.gradle',
-        `ios/${nS_NewName}Tests/${nS_NewName}Tests.m`,
-        'ios/build/info.plist',
-        'ios/Podfile',
+        path.join('ios',`${nS_NewName}.xcodeproj`,'project.pbxproj'),
+        path.join('ios',`${nS_NewName}.xcworkspace`,'contents.xcworkspacedata'),
+        path.join('ios',`${nS_NewName}.xcodeproj`,'xcshareddata','xcschemes',`${nS_NewName}-tvOS.xcscheme`),
+        path.join('ios',`${nS_NewName}.xcodeproj`,'xcshareddata','xcschemes',`${nS_NewName}.xcscheme`),
+        path.join('ios',`${nS_NewName}`,'AppDelegate.m'),
+        path.join('android','settings.gradle'),
+        path.join('ios',`${nS_NewName}Tests`,`${nS_NewName}Tests.m`),
+        path.join('ios','build','info.plist'),
+        path.join('ios', 'Podfile'),
         'app.json',
       ],
     },
     {
       regex: `text="${currentAppName}"`,
       replacement: `text="${newName}"`,
-      paths: [`ios/${nS_NewName}/Base.lproj/LaunchScreen.xib`],
+      paths: [
+        path.join('ios',nS_NewName,'Base.lproj','LaunchScreen.xib')
+      ],
     },
     {
       regex: currentAppName,
       replacement: newName,
-      paths: [`ios/${nS_NewName}/Info.plist`],
+      paths: [
+        path.join('ios',nS_NewName,'Info.plist')
+      ],
     },
     {
       regex: `"name": "${nS_CurrentAppName}"`,
